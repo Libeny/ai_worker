@@ -4,9 +4,9 @@ Travel planning workflow that drives Auto-GLM (phone agent) to collect guides an
 transport/hotels, then produce a report.
 
 Usage examples:
-  python scripts/travel_plan.py --to 三亚 --from 北京 --from 上海 --depart-date 2025-05-01 --return-date 2025-05-05
-  python scripts/travel_plan.py --to 成都 --note "2大1小 预算有限 想吃美食" --from 深圳
-  python scripts/travel_plan.py --base-url http://localhost:8000/v1 --model autoglm-phone-9b --apikey sk-xxx --to 厦门 --from 广州
+  python workflows/travel_plan.py --to 三亚 --from 北京 --from 上海 --depart-date 2025-05-01 --return-date 2025-05-05
+  python workflows/travel_plan.py --to 成都 --note "2大1小 预算有限 想吃美食" --from 深圳
+  python workflows/travel_plan.py --base-url http://localhost:8000/v1 --model autoglm-phone-9b --apikey sk-xxx --to 厦门 --from 广州
 """
 
 import argparse

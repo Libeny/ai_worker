@@ -22,6 +22,7 @@ from pydantic import BaseModel
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
+WORKFLOW_ROOT = PROJECT_ROOT / "workflows"
 DATA_ROOT = PROJECT_ROOT / "data"
 DB_DRIVER = os.getenv("AGLM_DB_DRIVER", "sqlite").lower()
 DB_PATH = Path(os.getenv("AGLM_DB_PATH", DATA_ROOT / "xiaomu.db"))
@@ -206,7 +207,7 @@ def _build_echo_cmd(payload: Dict[str, Any]) -> List[str]:
 
 
 def _build_travel_plan_cmd(payload: Dict[str, Any]) -> List[str]:
-    cmd: List[str] = [sys.executable, str(SCRIPTS_ROOT / "travel_plan.py")]
+    cmd: List[str] = [sys.executable, str(WORKFLOW_ROOT / "travel_plan.py")]
 
     script_args = payload.get("script_args") or []
     if script_args:
@@ -300,7 +301,7 @@ def register_dynamic_script_workflow(task_type: str, script_args: Optional[List[
     if task_type in WORKFLOW_REGISTRY:
         return task_type
 
-    script_path = SCRIPTS_ROOT / f"{task_type}.py"
+    script_path = WORKFLOW_ROOT / f"{task_type}.py"
     if not script_path.is_file():
         return None
 

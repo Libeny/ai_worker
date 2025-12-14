@@ -133,7 +133,7 @@ sequenceDiagram
 ## 3. 关键模块实现 (Middleware 内置)
 
 ### 3.1 调度核心 (Scheduler Core)
-不再调用外部脚本，而是直接在 `ai_worker_dispatcher/server.py` 中实现：
+不再调用外部脚本，而是直接在 `task_queue_service/server.py` 中实现：
 *   **Producer**: 接收 HTTP 请求，生成 UUID，写入 Redis List (`task_queue`)。
 *   **Consumer**: 启动独立的 Python 线程或进程（`threading.Thread`），死循环 `BRPOP` 消费队列。
 
@@ -160,7 +160,7 @@ sequenceDiagram
 3. 若接口返回 `status=accepted`，Agent 在微信端回复“任务已接收/失败”，形成前置闭环。
 
 ### 4.2 意图识别与入队
-在 `ai_worker_dispatcher/server.py` 内：
+在 `task_queue_service/server.py` 内：
 * `detect_intent(content)`：基于关键词/规则（可替换为 LLM 调用）识别意图与对应 Workflow。
 * 若请求包含 `task_type`：优先匹配 `WORKFLOW_REGISTRY`；若同名脚本 `scripts/{task_type}.py` 存在则自动注册动态 workflow，命令 `python scripts/{task_type}.py [script_args|content]`。
 * 构造任务负载：`{id, user, content, intent, workflow, task_type, script_args, created_at}`。
@@ -173,7 +173,7 @@ sequenceDiagram
 | `deployment_check` | 部署/上线/health/模型 | `scripts/check_deployment_cn.py --base-url ... --model ...` | 调用模型健康度检查脚本 |
 | `report_query` | 查询/报表/统计/流量 | `python -c "print('Report placeholder...')"` | 占位脚本，可替换为真实报表工作流 |
 | `general` | 兜底 | `python -c "print('Received intent=general ...')"` | 回显兜底，确保任务闭环 |
-| `travel_plan` | 旅游/旅行/行程/攻略/机票/航班/高铁/火车/12306/携程/美团/住宿/酒店/比价 | `task_type=travel_plan` 或 `scripts/travel_plan.py`（可传 `--to/--from/--dates/--note` 等） | 多出发地旅行规划，前端执行器驱动小红书/携程/美团/12306，比价后出报告 |
+| `travel_plan` | 旅游/旅行/行程/攻略/机票/航班/高铁/火车/12306/携程/美团/住宿/酒店/比价 | `task_type=travel_plan` 或 `workflows/travel_plan.py`（可传 `--to/--from/--dates/--note` 等） | 多出发地旅行规划，前端执行器驱动小红书/携程/美团/12306，比价后出报告 |
 
 > 扩展方式：在 `WORKFLOW_REGISTRY` 中新增入口脚本描述（命令构造函数、超时、说明），并在 `INTENT_RULES` 中增加关键词映射即可。
 
@@ -202,8 +202,8 @@ sequenceDiagram
 
 ### 5.2 本地启动步骤
 1) 准备 Redis（本地或 Docker）：`docker run -p 6379:6379 redis:7-alpine`。  
-2) 启动队列服务：`uvicorn ai_worker_dispatcher.server:app --host 0.0.0.0 --port 8000`（提供 `/enqueue`）。  
-3) 启动执行进程（如单机可与 Queue Service 同机启动）：复用 `ai_worker_dispatcher/server.py` 的 worker/responder 线程，或拆成独立脚本监听同一个队列键。  
+2) 启动队列服务：`uvicorn task_queue_service.server:app --host 0.0.0.0 --port 8000`（提供 `/enqueue`）。  
+3) 启动执行进程（如单机可与 Queue Service 同机启动）：复用 `task_queue_service/server.py` 的 worker/responder 线程，或拆成独立脚本监听同一个队列键。  
 4) 启动轮询：`python scripts/poll_wechat.py --user <wx> --webhook http://127.0.0.1:8000/enqueue ...`。  
 5) 验证：发消息触发任务，查看 Redis 状态键 `aglm:task:{id}`，确认微信侧收到回复。
 

@@ -111,7 +111,7 @@ sequenceDiagram
 
 ## 4. 关键模块实现思路
 
-### 4.1 中间件服务 (`ai_worker_dispatcher/server.py`)
+### 4.1 中间件服务 (`task_queue_service/server.py`)
 我们需要编写一个新的 Python 服务，它需要能够 import 您的 `cli-agent-server` 代码。
 
 **环境要求**: 该服务需要运行在能访问 `cli-agent-server` 依赖的 Python 环境中。
@@ -185,11 +185,11 @@ def trigger_reply_script(user, message):
 
 ## 5. 目录结构规划
 
-建议在当前目录下建立 `ai_worker_dispatcher` 文件夹，专门存放这些胶水代码，保持与 `Open-AutoGLM` 核心解耦。
+建议在当前目录下建立 `task_queue_service` 文件夹，专门存放这些胶水代码，保持与 `Open-AutoGLM` 核心解耦。
 
 ```text
 /Users/limuyu/work/Open-AutoGLM/
-├── ai_worker_dispatcher/
+├── task_queue_service/
 │   └── server.py           # FastAPI 服务入口（队列/状态/执行器封装）
 ├── scripts/
 │   ├── poll_wechat.py      # 轮询脚本 (配置指向 dispatcher url)
