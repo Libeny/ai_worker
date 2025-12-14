@@ -3,6 +3,7 @@
 import time
 from dataclasses import dataclass
 from typing import Any, Callable
+import requests
 
 from phone_agent.adb import (
     back,
@@ -243,10 +244,27 @@ class ActionHandler:
         return ActionResult(True, False)
 
     def _handle_call_api(self, action: dict, width: int, height: int) -> ActionResult:
-        """Handle API call action (placeholder for summarization)."""
-        # This action is typically used for content summarization
-        # Implementation depends on specific requirements
-        return ActionResult(True, False)
+        """Handle API call action (e.g., triggering external webhooks)."""
+        url = action.get("url")
+        if not url:
+            return ActionResult(False, False, "Missing 'url' for Call_API")
+        
+        data = action.get("data", {})
+        
+        try:
+            # Verify if it's a valid URL or just a placeholder
+            if not url.startswith("http"):
+                return ActionResult(False, False, f"Invalid URL protocol: {url}")
+
+            response = requests.post(url, json=data, timeout=10)
+            response.raise_for_status()
+            
+            # We return success but usually don't finish the whole task unless specified
+            # The agent might need to perform cleanup or other actions.
+            return ActionResult(True, False, message=f"API Request Success: {response.text[:100]}")
+            
+        except Exception as e:
+            return ActionResult(False, False, message=f"API Request Failed: {str(e)}")
 
     def _handle_interact(self, action: dict, width: int, height: int) -> ActionResult:
         """Handle interaction request (user choice needed)."""
