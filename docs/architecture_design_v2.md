@@ -289,3 +289,26 @@ sequenceDiagram
 - Resume 思路：在事件/任务表记录 `checkpoint_token` 和 `resume_hint`，下次继续时携带 token 再次入队或调用 /resume（可后续扩展）。  
 - 安全与审计：持久化记录谁、何时、发起什么任务及执行结果，支持重放/追踪。
 - 数据库配置：默认 `AGLM_DB_DRIVER=sqlite`（路径 `AGLM_DB_PATH`），可切换 `AGLM_DB_DRIVER=mysql` 并设置 `AGLM_DB_HOST/PORT/USER/PASSWORD/NAME`，使用 PyMySQL 驱动。
+
+### 9.1 Redis 连接
+- 环境变量：`AGLM_REDIS_HOST`（默认 127.0.0.1）、`AGLM_REDIS_PORT`（默认 6379）、`AGLM_REDIS_DB`（默认 0）。
+- 队列键：`AGLM_TASK_QUEUE`（默认 `aglm:task_queue`）。
+- 状态键前缀：`AGLM_TASK_PREFIX`（默认 `aglm:task`，实际键为 `aglm:task:{id}`）。
+
+### 9.2 MySQL 连接与建表
+- 环境变量：  
+  - `AGLM_DB_DRIVER=mysql`  
+  - `AGLM_DB_HOST`（默认 127.0.0.1）  
+  - `AGLM_DB_PORT`（默认 3306）  
+  - `AGLM_DB_USER`（默认 xm_user）  
+  - `AGLM_DB_PASSWORD`（默认 xm_pass）  
+  - `AGLM_DB_NAME`（默认 xiaomu）
+- PyMySQL 驱动，自动建表（启动时执行），表结构：
+  - `tasks`：`id VARCHAR(64) PRIMARY KEY, user VARCHAR(255), type VARCHAR(255), status VARCHAR(64), redis_key VARCHAR(255), created_at DOUBLE, updated_at DOUBLE, last_checkpoint TEXT, resume_hint TEXT, retries INT DEFAULT 0, payload_json MEDIUMTEXT, result_summary MEDIUMTEXT`
+  - `task_events`：`id BIGINT AUTO_INCREMENT PRIMARY KEY, task_id VARCHAR(64), phase VARCHAR(255), status VARCHAR(64), input MEDIUMTEXT, output MEDIUMTEXT, checkpoint_token TEXT, created_at DOUBLE, INDEX idx_task_id (task_id)`
+- SQLite（默认）表结构相同，路径由 `AGLM_DB_PATH` 控制，自动创建。
+
+### 9.3 启动检查
+- Redis：`redis-cli -h $AGLM_REDIS_HOST -p $AGLM_REDIS_PORT ping` 返回 PONG。  
+- MySQL：`mysql -h $AGLM_DB_HOST -P $AGLM_DB_PORT -u$AGLM_DB_USER -p$AGLM_DB_PASSWORD $AGLM_DB_NAME -e "SELECT 1;"` 返回 1。  
+- 服务启动：`uvicorn task_queue_service.server:app --host 0.0.0.0 --port 8000` 后，数据库若不存在表会自动创建。
